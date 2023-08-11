@@ -6,8 +6,8 @@ Version of 10 Aug 2023
 
 # Initialization
 
-At the moment, only conda environments are supported. The following shows how to
-set up yours:
+At the moment, only conda environments are supported. The following shows how
+to set up yours:
 
 ```bash
 # location of your project directories
@@ -128,8 +128,8 @@ Options:
                                      examples. If no --output-dir is provided an
                                      attempt will be made to guess it.
   -C|--build-dir <PATH>              [Optional] Path to the meson build directory.
-  -t|--build-type hw|sim|baryon      [Optional] Target platform of the build
-                                     ("sim" or "hw"; default: "hw")
+  -t|--build-type baryon             [Optional] Target platform of the build
+                                     ("baryon"; default: "baryon")
   --config <PATH>                    Specifies path to the BELEX config YAML file.
   --log-level DEFAULT|VERBOSE|DEBUG  [Optional] Specifies the verbosity of output
                                      from the compiler. (Default: DEFAULT)
