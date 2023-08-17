@@ -1,10 +1,26 @@
+#!/usr/bin/env bash
 # -------------------------------------------------------------------------------
 # By Dylon Edwards
 #
-# * Copyright (C) 2021 GSI Technology, Inc. All rights reserved.
-# *
-# * This software source code is the sole property of GSI Technology, Inc.
-# * and is proprietary and confidential.
+# Copyright 2019 - 2023 GSI Technology, Inc.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the “Software”), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
 export EXIT_SUCCESS=0
 
@@ -16,6 +32,24 @@ export EXIT_AWK_FAILED=7
 export EXIT_NO_MANIFEST=9
 export EXIT_CLEAN_FAILED=11
 export EXIT_SOURCE_FAILED=13
+export EXIT_UNSUPPORTED_OS=15
+
+declare OS
+declare OUTPUT
+
+OUTPUT="$(uname -s)"
+case "$OUTPUT" in
+    Linux*)
+        OS=Linux
+        ;;
+    Darwin*)
+        OS=MacOS
+        ;;
+    *)
+        echo "Unsupported operating system: $OUTPUT" 1>&2
+        exit $EXIT_UNSUPPORTED_OS
+        ;;
+esac
 
 # special value for xargs
 export EXIT_XARGS_FAILURE=255
@@ -141,10 +175,28 @@ function parse-manifest() {
         return $EXIT_AWK_FAILED
     fi
 
-    if [ -z "$SHUFFLE_TESTS" ]; then
-        readarray -t BELEX_TESTS < <(sort < <(printf '%s\n' "${BELEX_TESTS[@]}"))
-    else
-        readarray -t BELEX_TESTS < <(shuf -e "${BELEX_TESTS[@]}")
+    if [[ "$OS" == "Linux" ]]; then
+        if [ -z "$SHUFFLE_TESTS" ]; then
+            readarray -t BELEX_TESTS < <(sort < <(printf '%s\n' "${BELEX_TESTS[@]}"))
+        else
+            readarray -t BELEX_TESTS < <(shuf -e "${BELEX_TESTS[@]}")
+        fi
+    elif [[ "$OS" == "MacOS" ]]; then
+        local TEMP_TESTS
+        local TEMP_TEST
+
+        TEMP_TESTS=()
+        if [ -z "$SHUFFLE_TESTS" ]; then
+            while IFS=\= read TEMP_TEST; do
+                TEMP_TESTS+=( "$TEMP_TEST" )
+            done < <(sort < <(printf '%s\n' "${BELEX_TESTS[@]}"))
+        else
+            while IFS=\= read TEMP_TEST; do
+                TEMP_TESTS+=( "$TEMP_TEST" )
+            done < <(shuf -e "${BELEX_TESTS[@]}")
+        fi
+
+        export BELEX_TESTS=( "${TEMP_TESTS[@]}" )
     fi
 
     return $EXIT_SUCCESS
