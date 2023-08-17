@@ -302,6 +302,7 @@ function parse-opts() {
         return $EXIT_NO_OUTPUT_DIR
     fi
 
+    mkdir -p "$OUTPUT_DIR"
     OUTPUT_DIR="$(realpath "$OUTPUT_DIR")"
     export MANIFEST="$OUTPUT_DIR/meson.build"
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # -------------------------------------------------------------------------------
 # By Dylon Edwards
 #
@@ -31,6 +32,24 @@ export EXIT_AWK_FAILED=7
 export EXIT_NO_MANIFEST=9
 export EXIT_CLEAN_FAILED=11
 export EXIT_SOURCE_FAILED=13
+export EXIT_UNSUPPORTED_OS=15
+
+declare OS
+declare OUTPUT
+
+OUTPUT="$(uname -s)"
+case "$OUTPUT" in
+    Linux*)
+        OS=Linux
+        ;;
+    Darwin*)
+        OS=MacOS
+        ;;
+    *)
+        echo "Unsupported operating system: $OUTPUT" 1>&2
+        exit $EXIT_UNSUPPORTED_OS
+        ;;
+esac
 
 # special value for xargs
 export EXIT_XARGS_FAILURE=255
@@ -156,10 +175,28 @@ function parse-manifest() {
         return $EXIT_AWK_FAILED
     fi
 
-    if [ -z "$SHUFFLE_TESTS" ]; then
-        readarray -t BELEX_TESTS < <(sort < <(printf '%s\n' "${BELEX_TESTS[@]}"))
-    else
-        readarray -t BELEX_TESTS < <(shuf -e "${BELEX_TESTS[@]}")
+    if [[ "$OS" == "Linux" ]]; then
+        if [ -z "$SHUFFLE_TESTS" ]; then
+            readarray -t BELEX_TESTS < <(sort < <(printf '%s\n' "${BELEX_TESTS[@]}"))
+        else
+            readarray -t BELEX_TESTS < <(shuf -e "${BELEX_TESTS[@]}")
+        fi
+    elif [[ "$OS" == "MacOS" ]]; then
+        local TEMP_TESTS
+        local TEMP_TEST
+
+        TEMP_TESTS=()
+        if [ -z "$SHUFFLE_TESTS" ]; then
+            while IFS=\= read TEMP_TEST; do
+                TEMP_TESTS+=( "$TEMP_TEST" )
+            done < <(sort < <(printf '%s\n' "${BELEX_TESTS[@]}"))
+        else
+            while IFS=\= read TEMP_TEST; do
+                TEMP_TESTS+=( "$TEMP_TEST" )
+            done < <(shuf -e "${BELEX_TESTS[@]}")
+        fi
+
+        export BELEX_TESTS=( "${TEMP_TESTS[@]}" )
     fi
 
     return $EXIT_SUCCESS
