@@ -2037,3 +2037,61 @@ def test_rewrite_patterns(diri: DIRI):
         "[. . . . . . . . . . . . . . x . x . . . . . . . . . . . . . . .]",
         "[. . . . . . . . . . . . . . . x . . . . . . . . . . . . . . . .]",
     ])
+
+
+@belex_apl
+def section_wise_glass(Belex, tgt: VR):
+    dims = {'plats': 20,
+            'sections': 16,
+            'fmt': "hex",
+            'order': 'lsb',
+            'orientation': 'section-wise'}
+    Belex.glass(tgt, **dims)
+
+
+@parameterized_belex_test(interpret=False, generate_code=False)
+def test_section_wise_glass(diri: DIRI) -> int:
+    tgt_vp = 0
+
+    diri[tgt_vp, :20] = [
+        "10111011101110111011",
+        "01001000110010001110",
+        "10010101111110011111",
+        "00110000101011101011",
+        "00010011000010110101",
+        "11000110101110101100",
+        "11111011100011100111",
+        "00100010001011101011",
+        "00110111110001011101",
+        "01000100000100010101",
+        "01011110000000011011",
+        "00101010010010001001",
+        "10000010011100010000",
+        "00100011001111110111",
+        "10111011001111011110",
+        "01011110000111010101",
+    ]
+
+    captured_glass = []
+    section_wise_glass(tgt_vp, captured_glass=captured_glass)
+
+    assert captured_glass[0] == "\n".join([
+        "[D D D D D]",
+        "[2 1 3 1 7]",
+        "[9 A F 9 F]",
+        "[C 0 5 7 D]",
+        "[8 C 0 D A]",
+        "[3 6 D 5 3]",
+        "[F D 1 7 E]",
+        "[4 4 4 7 D]",
+        "[C E 3 A B]",
+        "[2 2 8 8 A]",
+        "[A 7 0 8 D]",
+        "[4 5 2 1 9]",
+        "[1 4 E 8 0]",
+        "[4 C C F E]",
+        "[D D C B 7]",
+        "[A 7 8 B A]",
+    ])
+
+    return tgt_vp

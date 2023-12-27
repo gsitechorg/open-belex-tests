@@ -7,11 +7,13 @@ dependencies:
   - Jinja2=3.1.2
   - PyYAML=6.0
   - bash=5.2.15
+  - bhv=0.8.8
   - clang=15.0.6
   - click=8.1.6
   - coreutils=9.3
   - gsi-baryon=1.6.2
   - hypothesis=6.82.0
+  - jsons=1.6.3
   - meson=0.59.3
   - ninja=1.11.1
   - numpy=1.25.1

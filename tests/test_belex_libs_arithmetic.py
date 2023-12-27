@@ -214,7 +214,7 @@ def test_random_add_u16_lifted_rn_regs_one_lifted_sm_reg(d: DIRI):
     res = 0
     x_xor_y = 8
     cout1 =   9
-    flags =  23  #ANYTHING EXCEPT 15! RN_REG_FLAGS.register  # 15
+    flags =  23  # ANYTHING EXCEPT 15! RN_REG_FLAGS.register  # 15
 
     sm_just_one = 0x0001
 
@@ -240,7 +240,7 @@ def test_random_add_u16_lifted_rn_regs_all_lifted_sm_regs(d: DIRI):
     res = 0
     x_xor_y = 8
     cout1 =   9
-    flags =  23  #ANYTHING EXCEPT 15! RN_REG_FLAGS.register  # 15
+    flags =  23  # ANYTHING EXCEPT 15! RN_REG_FLAGS.register  # 15
 
     sm_just_one = 0x0001
 

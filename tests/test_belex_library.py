@@ -144,6 +144,7 @@ def test_cpy_imm_16_4x(diri: DIRI, val: int) -> np.ndarray:
     assert np.array_equal(res4_vr, convert_to_u16(diri.SB[res4_sb]))
     return res1_sb
 
+
 #   _____         _
 #  |_   _|_ _ _ _| |_ __ _ _ _
 #    | |/ _` | '_|  _/ _` | ' \
@@ -860,6 +861,7 @@ def test_write_to_marked(d: DIRI) -> int:
     assert actual_glass == expected_glass
 
     return dst
+
 
 # __   ____  __ ___     _    _
 # \ \ / /  \/  | _ \   | |  / |

@@ -28,6 +28,7 @@ from open_belex.common.seu_layer import SEULayer
 from open_belex.common.stack_manager import StackManager
 from open_belex.diri.half_bank import DIRI, NUM_LGL_PLATS
 from open_belex.literal import SNIPPET_BUILDER, VR
+from open_belex.utils.config_utils import CONFIG
 from open_belex.utils.example_utils import convert_to_bool, convert_to_u16
 from open_belex.utils.path_utils import user_tmp
 
@@ -466,6 +467,11 @@ def parameterized_belex_test(
                 reservations = None
                 local_features = None
                 target = "baryon"
+
+            if StackManager.has_elem(CONFIG):
+                config = StackManager.peek(CONFIG)
+                if "reservations" in config:
+                    reservations = deepcopy(config["reservations"])
 
             vm = BLEIRVirtualMachine(
                 interpret=False,

@@ -2,6 +2,8 @@ r"""
 By Dylon Edwards
 """
 
+import sys
+
 from open_belex.common.constants import (NUM_HALF_BANKS_PER_APUC,
                                          NUM_PLATS_PER_HALF_BANK)
 from open_belex.diri.half_bank import DIRI
@@ -10,9 +12,10 @@ from open_belex.literal import (GL, INV_GL, INV_RL, NRL, RL, VR, WRL, Mask,
 from open_belex.utils.example_utils import convert_to_u16
 
 from open_belex_libs.common import cpy_imm_16_to_rl
-from open_belex_libs.tartan import (walk_marks_eastward,
+from open_belex_libs.tartan import (_write_test_markers, walk_marks_eastward,
                                     write_markers_in_plats_matching_value,
-                                    write_to_marked)
+                                    write_to_marked, tartan_set_up_mask_matrix,
+                                    tartan_assign, read_from_marked)
 
 from open_belex_tests.utils import parameterized_belex_test
 
@@ -551,7 +554,6 @@ def test_exercise_6(diri: DIRI) -> int:
     return mrk_vr
 
 
-
 # +-+-+-+-+-+-+-+-+ +-+-+ +-+-+-+-+-+-+-+-+-+
 # |E|X|E|R|C|I|S|E| |7|:| |I|N|C|R|E|M|E|N|T|
 # +-+-+-+-+-+-+-+-+ +-+-+ +-+-+-+-+-+-+-+-+-+
@@ -766,7 +768,9 @@ def test_exercise_8(diri: DIRI) -> int:
     sm = 0
     cy = 8  # select a temporary VR for carries
 
-    plats = 32
+    plats = 32  # 1024 #  takes 5 minutes in Python, but works.
+    sys.setrecursionlimit(max(1000, 8 * plats))  # 2 * plats + 32))
+
     clear_vr(sm)
     for _ in range(0, plats):
         brute_ripple_carry(sm, cy)
@@ -793,6 +797,83 @@ def test_exercise_8(diri: DIRI) -> int:
      '0000''0000''0000''0000''0000''0000''0000''0000']
 
     return sm
+
+
+@parameterized_belex_test(repeatably_randomize_half_bank=True)
+def test_read_from_marked(diri: DIRI) -> None:
+    r"""Use Tartan to read from marked, and use an ad-hoc routine
+    to do a similar thing. Compare the results."""
+
+    # Tartan matrices:
+    dst_vr : int = 19
+    src_vr : int = 13
+
+    # Add-hoc matrices:
+    adc_vr : int = 17
+    asc_vr : int = 18
+
+    # temps, marks, masks, common to both the Tartan and the ad-hoc approach.
+    tmp_vr : int = 10
+    mrk_vr : int =  8
+    mrk_sc : int =  2
+    msk_vr : int = 11
+
+    _write_test_markers(tmp_vr, mrk_sc, mrk_vr)
+    marker_indices = [3, 5, 6, 7]  # from 'write_test_markers'
+
+    full_mask = 0xFFFF
+    tartan_set_up_mask_matrix(msk_vr, full_mask, mrk_vr, mrk_sc)
+    # Test the mask matrix:
+    msk_np : np.ndarray = convert_to_u16(diri.hb[msk_vr, :, :])
+    for i in range(NUM_PLATS_PER_HALF_BANK * NUM_HALF_BANKS_PER_APUC):
+        # Mask pattern is repeated every 2048 plats
+        if i % NUM_PLATS_PER_HALF_BANK in marker_indices:
+            assert msk_np[i] == 0xFFFF, f'maskmat[{i}] should contain 0xffff'
+        else:
+            assert msk_np[i] == 0, f'maskmat[{i}] should contain 0'
+
+    # Capture numbers before the assignment so that we can check
+    # that nothing that should be deranged was, in fact, deranged.
+    dst_np_before : np.ndarray = convert_to_u16(diri.hb[dst_vr, :, :])
+    src_np_before : np.ndarray = convert_to_u16(diri.hb[src_vr, :, :])
+
+    tartan_assign(lvr=dst_vr, ls=full_mask,
+                  mvr=msk_vr, ms=mrk_sc, donor=src_vr, tvr=tmp_vr)
+
+    # Capture the numbers after the Tartan call
+    dst_np : np.ndarray = convert_to_u16(diri.hb[dst_vr, :, :])
+    src_np : np.ndarray = convert_to_u16(diri.hb[src_vr, :, :])
+
+    # Check that src plats (u16s) were copied from src to dst,
+    # that nothing else in dst was disturbed, and that nothing
+    # at all in src was changed.
+    for i in range(NUM_PLATS_PER_HALF_BANK * NUM_HALF_BANKS_PER_APUC):
+        # Mask pattern is repeated every 2048 plats
+        if i % NUM_PLATS_PER_HALF_BANK in marker_indices:
+            assert dst_np[i] == src_np_before[i]
+        else:
+            assert dst_np[i] == dst_np_before[i]
+        assert src_np[i] == src_np_before[i]
+
+    # Do a similar test with an ad-hoc routine that does not require a
+    # mask matrix.
+
+    adc_np_before : np.ndarray = convert_to_u16(diri.hb[adc_vr, :, :])
+    asc_np_before : np.ndarray = convert_to_u16(diri.hb[asc_vr, :, :])
+
+    read_from_marked(adc_vr, asc_vr, mrk_vr, mrk_sc)
+
+    adc_np : np.ndarray = convert_to_u16(diri.hb[adc_vr, :, :])
+    asc_np : np.ndarray = convert_to_u16(diri.hb[asc_vr, :, :])
+
+    for i in range(NUM_PLATS_PER_HALF_BANK * NUM_HALF_BANKS_PER_APUC):
+        if i % NUM_PLATS_PER_HALF_BANK in marker_indices:
+            assert adc_np[i] == asc_np_before[i]
+        else:
+            assert adc_np[i] == adc_np_before[i]
+        assert asc_np[i] == asc_np_before[i]
+
+    pass
 
 
 #  ___          _    _
