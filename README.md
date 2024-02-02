@@ -22,6 +22,11 @@ DEFAULT_BRANCH="master"
 BELEX_BRANCH="$DEFAULT_BRANCH"
 BELEX_LIBS_BRANCH="$DEFAULT_BRANCH"
 BELEX_TESTS_BRANCH="$DEFAULT_BRANCH"
+BARYON_BRANCH="$DEFAULT_BRANCH"
+
+# Baryon may be built in either "Debug" or "Release" mode. For development,
+# you should use "Debug".
+BARYON_BUILD_TYPE="Debug"
 
 git clone --branch "$BELEX_BRANCH" \
     https://github.com/gsitechorg/open-belex.git
@@ -29,6 +34,8 @@ git clone --branch "$BELEX_LIBS_BRANCH" \
     https://github.com/gsitechorg/open-belex-libs.git
 git clone --branch "$BELEX_TESTS_BRANCH" \
     https://github.com/gsitechorg/open-belex-tests.git
+git clone --branch "$BARYON_BRANCH" \
+    https://github.com/gsitechorg/fermion.git
 
 cd open-belex-tests
 
@@ -39,7 +46,17 @@ conda activate open-belex-test
 # Tell pip to use the cloned versions of open-belex, open-belex-libs,
 # and open-belex-tests
 pip install -e ../open-belex -e ../open-belex-libs -e .
-```
+
+# Install the desired version of Baryon
+pushd ../fermion
+mamba env create --force -f environment.yml
+conda activate baryon
+./setup.sh --build-type "$BARYON_BUILD_TYPE" \
+           --prefix ~/mambaforge/envs/open-belex-test \
+           --install
+conda deactivate
+popd
+"``
 
 # Testing
 
