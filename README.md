@@ -56,7 +56,7 @@ conda activate baryon
            --install
 conda deactivate
 popd
-"``
+```
 
 # Testing
 
